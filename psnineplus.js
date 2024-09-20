@@ -528,7 +528,7 @@
         tdElements.forEach((tr) => {
           const gameID = tr.querySelector('td.pdd15 a').href.match(/\/psngame\/(\d+)/)[1];
           const thisGameCompletion = personalGameCompletions.find((item) => item[0] === gameID);
-          if (thisGameCompletion && thisGameCompletion[1] < 100) {
+          if (thisGameCompletion) {
             // 约战页面没有显示游戏本身是否有白金，就直接默认白金底色显示了
             if (settings.nightMode) { tr.setAttribute('style', progressPlatinumBGNight(thisGameCompletion[1])); }
             if (!settings.nightMode) { tr.setAttribute('style', progressPlatinumBG(thisGameCompletion[1])); }

@@ -589,7 +589,7 @@
     if ((/\/psnid\/[A-Za-z0-9_-]+\/?$/.test(window.location.href)
       || /\/psnid\/[A-Za-z0-9_-]+\/psngame/.test(window.location.href))
       && document.querySelectorAll('table.list > tbody > tr').length > 0) {
-      const progressPlatinumBG = (p) => `background-image: linear-gradient(90deg,#F4F8FA ${p}%,  #eaeaea ${p+0.25}%, white ${p}%)`;
+      const progressPlatinumBG = (p) => `background-image: linear-gradient(90deg,#F4F8FA ${p}%,  #eaeaea ${p + 0.25}%, white ${p}%)`;
       const progressPlatinumBGNight = (p) => `background-image: linear-gradient(90deg, #4b4b4b ${p}%,#3d3d3d ${p}%)`;
       const progressGoldBG = (p) => `background-image: linear-gradient(90deg, #F5FAEC ${p}%, white ${p}%)`;
       const progressGoldBGNight = (p) => `background-image: linear-gradient(90deg, #4b4b4b ${p}%, #3d3d3d ${p}%)`;

@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         PSN中文网功能增强
 // @namespace    https://swsoyee.github.io
-// @version      1.0.30
+// @version      1.0.37
 // @description  数折价格走势图，显示人民币价格，奖杯统计和筛选，发帖字数统计和即时预览，楼主高亮，自动翻页，屏蔽黑名单用户发言，被@用户的发言内容显示等多项功能优化P9体验
 // eslint-disable-next-line max-len
 // @icon         data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAMAAAAp4XiDAAAAMFBMVEVHcEw0mNs0mNs0mNs0mNs0mNs0mNs0mNs0mNs0mNs0mNs0mNs0mNs0mNs0mNs0mNuEOyNSAAAAD3RSTlMAQMAQ4PCApCBQcDBg0JD74B98AAABN0lEQVRIx+2WQRaDIAxECSACWLn/bdsCIkNQ2XXT2bTyHEx+glGIv4STU3KNRccp6dNh4qTM4VDLrGVRxbLGaa3ZQSVQulVJl5JFlh3cLdNyk/xe2IXz4DqYLhZ4mWtHd4/SLY/QQwKmWmGcmUfHb4O1mu8BIPGw4Hg1TEvySQGWoBcItgxndmsbhtJd6baukIKnt525W4anygNECVc1UD8uVbRNbumZNl6UmkagHeRJfX0BdM5NXgA+ZKESpiJ9tRFftZEvue2cS6cKOrGk/IOLTLUcaXuZHrZDq3FB2IonOBCHIy8Bs1Zzo1MxVH+m8fQ+nFeCQM3MWwEsWsy8e8Di7meA5Bb5MDYCt4SnUbP3lv1xOuWuOi3j5kJ5tPiZKahbi54anNRaaG7YElFKQBHR/9PjN3oD6fkt9WKF9rgAAAAASUVORK5CYII=
@@ -10,8 +10,8 @@
 // @include      *psnine.com/*
 // @include      *d7vg.com/*
 // @require      http://libs.baidu.com/jquery/2.1.4/jquery.min.js
-// @require      https://code.highcharts.com/11.1.0/highcharts.js
-// @require      https://code.highcharts.com/11.1.0/modules/histogram-bellcurve.js
+// @require      https://cdnjs.cloudflare.com/ajax/libs/highcharts/11.0.1/highcharts.js
+// @require      https://cdnjs.cloudflare.com/ajax/libs/highcharts/11.0.1/modules/histogram-bellcurve.js
 // @require      https://unpkg.com/tippy.js@3/dist/tippy.all.min.js
 // @license      MIT
 // @supportURL   https://github.com/swsoyee/psnine-night-mode-CSS/issues/new
@@ -193,7 +193,15 @@
       const duplicatedSchemeRegex2 = /(<a( [^<]+?)?>)((https?:\/\/)+)/g;
       const untaggedUrlRegex = /(?<!((href|src)="|<a( [^<]+?)?>))(https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([A-Za-z0-9\-._~:/?#[\]@!$&'()*+,;=%]*))(?!("|<\/a>))/g;// https://stackoverflow.com/a/3809435 & https://stackoverflow.com/a/1547940
       const fixTextLinksOnThePage = (isOn) => {
-        if (isOn && /(\/(topic|gene|qa|battle|trade)\/\d+)|(\/psnid\/.+?\/comment)|(\/my\/notice)|(\/psngame\/\d+\/comment)|(\/trophy\/\d+)/.test(window.location.href)) $('div.content').each((i, e) => { e.innerHTML = e.innerHTML.replace(duplicatedSchemeRegex1, '$1$4').replace(duplicatedSchemeRegex2, '$1$4').replace(untaggedUrlRegex, '<a href="$4" target="_blank">$4</a>'); });
+        const fixLinks = (i, e) => { e.innerHTML = e.innerHTML.replace(duplicatedSchemeRegex1, '$1$4').replace(duplicatedSchemeRegex2, '$1$4').replace(untaggedUrlRegex, '<a href="$4" target="_blank">$4</a>'); };
+        if (isOn) {
+          if (/(\/(topic|gene|qa|battle|trade)\/\d+)|(\/psnid\/.+?\/comment)|(\/my\/notice)|(\/psngame\/\d+\/comment)|(\/trophy\/\d+)/.test(window.location.href)) $('div.content').each(fixLinks);
+          if (/\/zuo\/?($|\?)/g.test(window.location.href)) {
+            $('div.log-details span.detail-value.moderator').each((i, e) => { e.outerHTML = e.outerHTML.replace(/>\s*([^<]+)\s*</g, '><a href="https://www.psnine.com/psnid/$1" target="_blank">$1</a><'); });
+            $('div.post-info > div.post-info-item:nth-of-type(1) span.detail-value.moderator').each((i, e) => { e.outerHTML = e.outerHTML.replace(/>\s*([^<]+)\s*</g, '><a href="https://www.psnine.com/psnid/$1" target="_blank">$1</a><'); });
+            $('div.log-content').each(fixLinks);
+          }
+        }
       };
       // 修复D7VG链接
       const linkReplace = (link, substr, newSubstr) => {
@@ -365,11 +373,23 @@
             }`);
     // 修复PSPC平台图标显示（临时）
     const fixPspcIcon = () => {
+      if (/^https?:\/\/psnine\.com\/?$/g.test(window.location.href)) {
+        const $ul = $('div.inner.mt20 > div.side > div.hd3').filter((index, element) => $(element).text().trim() === '游戏评论').next('ul.darklist.pd10');
+        if ($ul.length > 0) $ul.find('> li > a.l > img').removeAttr('height');
+      }
       let pspcIconFixed = true;
       document.querySelectorAll('span.pf_pspc').forEach((e) => {
         if (getComputedStyle(e).backgroundColor === 'rgba(0, 0, 0, 0)') pspcIconFixed = false;
+        // 大部分游戏列表
+        $(e).closest('tr').find('td > a > img.imgbgnb').removeAttr('height');
+        // psngame页面
+        $(e).closest('div.box.pd10').children('img.imgbgnb.mr10.l.h-p').removeAttr('height');
+        // topic页面的关联奖杯列表
+        $(e).closest('ul.darklist.pd5').find('li > a.l > img').removeAttr('height');
       });
       if (!pspcIconFixed) {
+        if (/^https?:\/\/psnine\.com\/psngame\/\d+\/?($|\?)/g.test(window.location.href)) $('table.list > tbody > tr > td > img.imgbgnb.l').removeAttr('height');
+        if (/^https?:\/\/psnine\.com\/qa\/\d+\/?($|\?)/g.test(window.location.href)) $('div.inner.mt40 > div.main > ul.darklist > li > a.l > img').removeAttr('height');
         GM_addStyle(`
               .pf_pspc {
                 font-size: 11px;
@@ -394,6 +414,31 @@
     };
 
     fixPspcIcon();
+
+    // 修复game页面的PS5游戏封面显示（临时）
+    const fixPs5CoverOnGamePages = () => {
+      if (/^https?:\/\/psnine\.com\/game\/\d+/g.test(window.location.href)) {
+        document.querySelectorAll('ul.darklist span.r').forEach((e) => {
+          if (/PS5/g.test(e.innerText)) {
+            const ps5Cover = $(e).closest('li').find('a > img');
+            if (ps5Cover.length > 0) { // 若为0则表示游戏使用了PS5以外版本的封面，不用进一步修复
+              ps5Cover.removeAttr('height');
+              const wrap = $(e).closest('ul.darklist');
+              const wrapStyle = wrap.attr('style');
+              const minHeightMatch = wrapStyle.match(/min-height:\s*\d+px/g);
+              if (minHeightMatch) {
+                // 修改min-height值，增加PS5封面高度（91）和PS4封面高度（50）的差值
+                const minHeightValNew = Number.parseInt(minHeightMatch[0].match(/\d+/g)[0], 10) + (91 - 50);
+                wrap.attr('style', wrapStyle.replace(minHeightMatch[0], `min-height:${minHeightValNew}px`));
+              }
+            }
+          }
+        });
+      }
+    };
+
+    fixPs5CoverOnGamePages();
+
     /*
     * 页面右下角追加点击跳转到页面底部按钮
     */
@@ -1257,6 +1302,7 @@
                   $('tbody > tr:last').after(nextGameContent);
                   isbool2 = true;
                   gamePageIndex += 1;
+                  fixPspcIcon();
                 } else {
                   $('#loadingMessage').text('没有更多游戏了...');
                 }
@@ -2082,6 +2128,7 @@
                 filterUserPost();
                 addHoverProfile();
                 addHotTag();
+                fixPspcIcon();
               },
               'html',
             );
@@ -3401,7 +3448,7 @@
       const subcommentAlreadyExpanded = (subcommentLink) => Boolean($(subcommentLink).parents('li')[0].querySelector('div.sonlistmark.ml64.mt10 > ul.sonlist > li'));
       const subcommentLinks = [];
       commentMetas.forEach((commentMeta) => {
-        const subcommentLink = commentMeta.querySelector('span.r > a:nth-child(2)');
+        const subcommentLink = commentMeta.querySelector('span.r > a:last-of-type');
         if (/评论\(\d+\)/.test(subcommentLink.innerText.trim()) && !subcommentAlreadyExpanded(subcommentLink)) subcommentLinks.push(subcommentLink);
       });
       if (subcommentLinks.length === 0) return;
@@ -3411,7 +3458,7 @@
       const observer = new IntersectionObserver((entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            const link = entries[0].target;
+            const link = entry.target;
             if (clickedLinks.indexOf(link) < 0 && links.indexOf(link) < 0) links.push(link);
           }
         });

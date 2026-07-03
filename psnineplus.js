@@ -702,6 +702,47 @@
     }
     /* ↑↑↑↑ 约战监控与通知相关功能结束 ↑↑↑↑ */
 
+    // 约战列表页：每行添加铃铛监控图标
+    if (/^https?:\/\/[^/]+\/battle\/?$/.test(window.location.href)) {
+      GM_addStyle('.bell-icon{opacity:0.5;cursor:pointer;margin-left:6px;font-size:14px;vertical-align:middle;user-select:none;filter:grayscale(1);}');
+      GM_addStyle('.bell-icon.monitored{opacity:1;color:#d4af37;filter:none;}');
+
+      document.querySelectorAll('table.list > tbody > tr').forEach((tr) => {
+        const gameLink = tr.querySelector('td.pdd15 a');
+        if (!gameLink) return;
+        const gameID = gameLink.href.match(/\/psngame\/(\d+)/)[1];
+        if (!gameID) return;
+        const p = tr.querySelector('td.pd15 p');
+        if (!p) return;
+
+        const bell = document.createElement('span');
+        bell.className = 'bell-icon';
+        bell.textContent = '🔔';
+        bell.title = '切换约战监控';
+        bell.dataset.gameId = gameID;
+        if (userBattleMonitors.includes(gameID)) bell.classList.add('monitored');
+
+        p.appendChild(bell);
+
+        bell.addEventListener('click', (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          const wasMonitored = userBattleMonitors.includes(gameID);
+          if (wasMonitored) {
+            userBattleMonitors = userBattleMonitors.filter((id) => id !== gameID);
+          } else {
+            userBattleMonitors.push(gameID);
+          }
+          GM_setValue('userBattleMonitors', userBattleMonitors);
+          updateTopMenuNotice(userBattleMonitors, cacheBattleInfo.list);
+          // 同步更新所有同游戏ID的铃铛
+          document.querySelectorAll(`.bell-icon[data-game-id="${gameID}"]`).forEach((b) => {
+            b.classList.toggle('monitored', !wasMonitored);
+          });
+        });
+      });
+    }
+
     /*
     * 自动签到功能
     * @param  isOn  是否开启功能

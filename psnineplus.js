@@ -947,8 +947,9 @@
       GM_addStyle('.tipContainer { padding: 10px 10px 10px 84px; margin: 0;}');
       GM_addStyle('.tipContainer > ul.list > li {padding: 4px 14px 4px 8px;}');
       GM_addStyle('.tipContainer > ul.list > li:first-child { padding:4px 14px 4px 8px;}');
-      GM_addStyle('table.list td > p > em.alert-success{cursor:pointer}');
-      GM_addStyle('table.list td > p > em.alert-success::after{content:""; width:0; height:0px; border-top:5px solid #659f13; border-left: 5px solid transparent; border-right: 5px solid transparent; margin-left: 7px; display: inline-block; position: relative; top: -2px}');
+      GM_addStyle('table.list td > p > em.alert-success{cursor:pointer; transition: color .2s ease;}');
+      GM_addStyle('table.list td > p > em.alert-success::after{content:"▼"; color:#659f13; margin-left: 6px; display: inline-block; font-size: 10px; line-height: 1; vertical-align: middle; transition: color .2s ease;}');
+      GM_addStyle('table.list td > p > em.alert-success.tipBadgeExpanded::after{content:"▲"; color:#2e8b57;}');
 
       const trophyTables = Array.from(document.querySelectorAll('table.list')); // every dlc has one table
       const thisPageTrophyList = trophyTables
@@ -973,9 +974,16 @@
               trDom: tr,
               table,
               tipListDom: null,
+              tipBadgeEle: null,
               tipShow: false,
             };
           }));
+
+      const updateTrophyTipBadgeState = (t) => {
+        if (t.tipBadgeEle) {
+          t.tipBadgeEle.classList.toggle('tipBadgeExpanded', t.tipShow === true);
+        }
+      };
 
       // 添加对象代理以便数据更新后自动渲染对应 DOM，并且在 tipShow 为 true 时自动加载
       const myTrophyList = thisPageTrophyList.map((item) => new Proxy(item, {
@@ -983,6 +991,9 @@
           let flag = false;
           if (prop === 'tipListDom' || prop === 'tipShow') { flag = true; }
           target[prop] = value;
+          if (prop === 'tipShow') {
+            updateTrophyTipBadgeState(target);
+          }
           // eslint-disable-next-line no-use-before-define
           if (flag) { refreshTrophyTip(); }
           return true;
@@ -1104,6 +1115,8 @@
         const trophyTipEle = mainColumn.querySelector('p em.alert-success');
 
         if (trophyTipEle) {
+          t.tipBadgeEle = trophyTipEle;
+          updateTrophyTipBadgeState(t);
           const throttleGetTipContent = throttleDebounce(() => {
             getTipContent(t);
             t.tipShow = true;

@@ -762,9 +762,13 @@
         const bell = document.createElement('span');
         bell.className = 'bell-icon';
         bell.textContent = '🔔';
-        bell.title = '切换约战监控';
         bell.dataset.gameId = gameID;
-        if (userBattleMonitors.includes(gameID)) bell.classList.add('monitored');
+        if (userBattleMonitors.includes(gameID)) {
+          bell.classList.add('monitored');
+          bell.title = '关闭该游戏约战监控';
+        } else {
+          bell.title = '打开该游戏约战监控';
+        }
 
         p.appendChild(bell);
 
@@ -782,6 +786,7 @@
           // 同步更新所有同游戏ID的铃铛
           document.querySelectorAll(`.bell-icon[data-game-id="${gameID}"]`).forEach((b) => {
             b.classList.toggle('monitored', !wasMonitored);
+            b.title = wasMonitored ? '打开该游戏约战监控' : '关闭该游戏约战监控';
           });
         });
       });

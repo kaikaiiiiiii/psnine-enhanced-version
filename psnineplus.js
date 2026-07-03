@@ -952,6 +952,8 @@
       GM_addStyle('table.list td > p > em.alert-success{cursor:pointer; transition: color .2s ease;}');
       GM_addStyle('table.list td > p > em.alert-success::after{content:"▼"; color:#659f13; margin-left: 6px; display: inline-block; font-size: 10px; line-height: 1; vertical-align: middle; transition: color .2s ease;}');
       GM_addStyle('table.list td > p > em.alert-success.tipBadgeExpanded::after{content:"▲"; color:#2e8b57;}');
+      GM_addStyle('table.list td > p > em.alert-success.tipBadgeLoading::after{content:"⟳"; color:#3890ff; display:inline-block; animation:tipSpin .8s linear infinite;}');
+      GM_addStyle('@keyframes tipSpin{to{transform:rotate(360deg)}}');
 
       const trophyTables = Array.from(document.querySelectorAll('table.list')); // every dlc has one table
       const thisPageTrophyList = trophyTables
@@ -978,26 +980,33 @@
               tipListDom: null,
               tipBadgeEle: null,
               tipShow: false,
+              loading: false,
             };
           }));
 
       const updateTrophyTipBadgeState = (t) => {
         if (t.tipBadgeEle) {
-          t.tipBadgeEle.classList.toggle('tipBadgeExpanded', t.tipShow === true);
+          t.tipBadgeEle.classList.toggle('tipBadgeExpanded', t.tipShow === true && t.loading !== true);
+          t.tipBadgeEle.classList.toggle('tipBadgeLoading', t.loading === true);
         }
       };
 
       // 添加对象代理以便数据更新后自动渲染对应 DOM，并且在 tipShow 为 true 时自动加载
       const myTrophyList = thisPageTrophyList.map((item) => new Proxy(item, {
         set: (target, prop, value) => {
-          let flag = false;
-          if (prop === 'tipListDom' || prop === 'tipShow') { flag = true; }
           target[prop] = value;
-          if (prop === 'tipShow') {
+          if (prop === 'tipShow' || prop === 'loading') {
             updateTrophyTipBadgeState(target);
           }
-          // eslint-disable-next-line no-use-before-define
-          if (flag) { refreshTrophyTip(); }
+          if (prop === 'tipListDom') {
+            // eslint-disable-next-line no-use-before-define
+            refreshTrophyTip();
+            target.loading = false;
+            updateTrophyTipBadgeState(target);
+          } else if (prop === 'tipShow') {
+            // eslint-disable-next-line no-use-before-define
+            refreshTrophyTip();
+          }
           return true;
         },
       }));
@@ -1126,9 +1135,10 @@
 
           trophyTipEle.addEventListener('click', (event) => {
             if (!t.tipListDom) {
+              t.loading = true;
               throttleGetTipContent(event);
             } else {
-              t.tipShow = !t.tipShow; // 当状态变化时会触发 set 函数
+              t.tipShow = !t.tipShow; // 直接切换 ▲/▼，无需 loading
             }
           });
         }

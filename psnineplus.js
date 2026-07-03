@@ -873,7 +873,7 @@
       // console.log(`https://psnine.com/psnid/${userid}/psngame?page=${startPageID}`)
       $.ajax({
         type: 'GET',
-        url: `https://psnine.com/psnid/${userid}/psngame?page=${startPageID}`,
+        url: `${window.location.protocol}//${window.location.hostname}/psnid/${userid}/psngame?page=${startPageID}`,
         dataType: 'html',
         async: true,
         success: (data, status) => {
@@ -3358,7 +3358,7 @@
         .replace(/\s*[（(]VR2?(\s*可选)?[）)]\s*$/gi, '')
         .replace(/\s*Trophies\s*$/gi, '');
       function findGameVariantsBySearch(gameId, gameTitle, tryGameMeta = false) {
-        const searchUrl = `https://psnine.com/psngame?title=${encodeURIComponent(gameTitle).replaceAll('%20', '+')}`;
+        const searchUrl = `${window.location.protocol}//${window.location.hostname}/psngame?title=${encodeURIComponent(gameTitle).replaceAll('%20', '+')}`;
         fetchPageAndProcess(searchUrl, (page) => {
           const psngameMatches = $(page).find('div.min-inner.mt40 > div.box > table > tbody > tr > td.pd1015.title.lh180 > a');
           if (psngameMatches.length <= 0) return;
@@ -3379,7 +3379,7 @@
             } else {
               // 无缓存、当前页面并非奖杯列表，抓取奖杯列表页面再查询
               // eslint-disable-next-line no-use-before-define
-              fetchPageAndProcess(`https://psnine.com/psngame/${gameId}`, (_page) => { findGameVariantsByMeta(gameId, _page); });
+              fetchPageAndProcess(`${window.location.protocol}//${window.location.hostname}/psngame/${gameId}`, (_page) => { findGameVariantsByMeta(gameId, _page); });
             }
           }
         });
@@ -3438,7 +3438,7 @@
           findGameVariantsBySearch(gameId, findGameTitle(), true);
         } else {
           // 无缓存、当前页面并非奖杯列表、非搜索优先，抓取奖杯列表页面再查询
-          fetchPageAndProcess(`https://psnine.com/psngame/${gameId}`, (page) => { findGameVariantsByMeta(gameId, page, true); });
+          fetchPageAndProcess(`${window.location.protocol}//${window.location.hostname}/psngame/${gameId}`, (page) => { findGameVariantsByMeta(gameId, page, true); });
         }
       };
       if (/\/psngame\//g.test(window.location.href)) {

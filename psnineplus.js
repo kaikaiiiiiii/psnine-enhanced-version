@@ -585,6 +585,50 @@
       }
     }
 
+    // 个人主页/游戏列表页：背景进度条（含 mutationObserver 监控动态加载）
+    if ((/\/psnid\/[A-Za-z0-9_-]+\/?$/.test(window.location.href)
+      || /\/psnid\/[A-Za-z0-9_-]+\/psngame/.test(window.location.href))
+      && document.querySelectorAll('table.list > tbody > tr').length > 0) {
+      const progressPlatinumBG = (p) => `background-image: linear-gradient(90deg,#F4F8FA ${p}%, white ${p}%)`;
+      const progressPlatinumBGNight = (p) => `background-image: linear-gradient(90deg, #4b4b4b ${p}%,#3d3d3d ${p}%)`;
+      const progressGoldBG = (p) => `background-image: linear-gradient(90deg, #659f13 ${p}%, white ${p}%)`;
+      const progressGoldBGNight = (p) => `background-image: linear-gradient(90deg, #4b4b4b ${p}%, #3d3d3d ${p}%)`;
+
+      const applyProgressToRow = (tr) => {
+        const gameLink = tr.querySelector('td.pd15 a');
+        if (!gameLink) return;
+        const gameID = gameLink.href.match(/\/psngame\/(\d+)/)[1];
+        if (!gameID) return;
+        const personalGameCompletions = GM_getValue('personalGameCompletions', []);
+        const thisGameCompletion = personalGameCompletions.find((item) => item[0] === gameID);
+        if (!thisGameCompletion) return;
+        const completion = thisGameCompletion[1];
+        const hasPlatinum = thisGameCompletion[2];
+        if (completion >= 100 && !hasPlatinum) {
+          tr.setAttribute('style', settings.nightMode ? progressGoldBGNight(completion) : progressGoldBG(completion));
+        } else {
+          tr.setAttribute('style', settings.nightMode ? progressPlatinumBGNight(completion) : progressPlatinumBG(completion));
+        }
+      };
+
+      // 初始行
+      document.querySelectorAll('table.list > tbody > tr').forEach(applyProgressToRow);
+
+      // 监控动态加载的行
+      const progressObserver = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          mutation.addedNodes.forEach((node) => {
+            if (node.nodeType === 1 && node.matches('tr')) {
+              applyProgressToRow(node);
+            }
+          });
+        });
+      });
+      document.querySelectorAll('table.list > tbody').forEach((tbody) => {
+        progressObserver.observe(tbody, { childList: true });
+      });
+    }
+
     /* ↓↓↓ 约战监控与通知相关功能开始 ↓↓↓↓
         1. 用户是否设置了监控
         2. 约战缓存是否存在或过期，否则从约战页更新数据

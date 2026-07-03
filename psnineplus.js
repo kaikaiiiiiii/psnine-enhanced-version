@@ -588,18 +588,18 @@
     // 个人主页/游戏列表页：背景进度条（含 mutationObserver 监控动态加载）
     if ((/\/psnid\/[A-Za-z0-9_-]+\/?$/.test(window.location.href)
       || /\/psnid\/[A-Za-z0-9_-]+\/psngame/.test(window.location.href))
-      && document.querySelectorAll('table.list > tbody > tr').length > 0) {
+      && document.querySelector('table.list > tbody')) {
       const progressPlatinumBG = (p) => `background-image: linear-gradient(90deg,#F4F8FA ${p}%,  #eaeaea ${p + 0.25}%, white ${p}%)`;
       const progressPlatinumBGNight = (p) => `background-image: linear-gradient(90deg, #4b4b4b ${p}%,#3d3d3d ${p}%)`;
       const progressGoldBG = (p) => `background-image: linear-gradient(90deg, #F5FAEC ${p}%, white ${p}%)`;
       const progressGoldBGNight = (p) => `background-image: linear-gradient(90deg, #4b4b4b ${p}%, #3d3d3d ${p}%)`;
 
+      const personalGameCompletions = GM_getValue('personalGameCompletions', []);
       const applyProgressToRow = (tr) => {
         const gameLink = tr.querySelector('td.pd15 a');
         if (!gameLink) return;
         const gameID = gameLink.href.match(/\/psngame\/(\d+)/)[1];
         if (!gameID) return;
-        const personalGameCompletions = GM_getValue('personalGameCompletions', []);
         const thisGameCompletion = personalGameCompletions.find((item) => item[0] === gameID);
         if (!thisGameCompletion) return;
         const completion = thisGameCompletion[1];
@@ -913,7 +913,7 @@
     };
 
     // 后台更新主函数
-    const loadGameCompletions = (userid, startPageID) => {
+    const loadGameCompletions = (userid, startPageID, onComplete, totalAddCounts = 0) => {
       // console.log(`https://psnine.com/psnid/${userid}/psngame?page=${startPageID}`)
       $.ajax({
         type: 'GET',
@@ -946,21 +946,25 @@
             GM_setValue('personalGameCompletionsLastUpdate', pagesUpdateTime);
 
             // 根据规则计算下一页
+            const newTotal = totalAddCounts + addCounts;
             if (addCounts === thisPageCompletions.length && startPageID < totalPages - 1) {
-              setTimeout(() => { loadGameCompletions(userid, startPageID + 1); }, 5000);
+              setTimeout(() => { loadGameCompletions(userid, startPageID + 1, onComplete, newTotal); }, 5000);
               return true;
             }
             const fullfilledUpdateTime = pagesUpdateTime.concat(Array(totalPages - pagesUpdateTime.length).fill(0));
             const nextIdx = fullfilledUpdateTime.findIndex((time) => time === undefined || time === 0 || time === null);
             if (nextIdx !== -1) {
-              setTimeout(() => { loadGameCompletions(userid, nextIdx + 1); }, 5000);
+              setTimeout(() => { loadGameCompletions(userid, nextIdx + 1, onComplete, newTotal); }, 5000);
               return true;
             }
+            // 全部页面处理完毕
+            if (onComplete) onComplete(newTotal);
             return false;
           }
+          if (onComplete) onComplete(0);
           return true;
         },
-        error: (e) => { console.log('loadGameCompletions error', e); },
+        error: (e) => { console.log('loadGameCompletions error', e); if (onComplete) onComplete(0); },
       });
     };
 
@@ -971,12 +975,16 @@
     const myHomepageURLRegex = new RegExp(`psnid/${myUserId}/?`);
     const myGamePageURLRegex = new RegExp(`psnid/${myUserId}/psngame(?:\\?page=(\\d+))?`);
 
-    // 后台更新频次控制
+    // 后台更新频次控制（递增式间隔：无更新则 +1h，最多 144h；有更新则重置为 1h）
     const bgUpdateMyGameCompletion = () => {
       const pagesUpdateTime = GM_getValue('personalGameCompletionsLastUpdate', []);
+      const intervalHours = GM_getValue('personalGameCompletionInterval', 1);
       const now = new Date().getTime();
-      if (pagesUpdateTime[0] === undefined || now - pagesUpdateTime[0] > 60 * 60 * 1000) {
-        loadGameCompletions(myUserId, 1);
+      if (pagesUpdateTime[0] === undefined || now - pagesUpdateTime[0] > intervalHours * 60 * 60 * 1000) {
+        loadGameCompletions(myUserId, 1, (addCounts) => {
+          const newInterval = addCounts > 0 ? 1 : Math.min(intervalHours + 1, 144);
+          GM_setValue('personalGameCompletionInterval', newInterval);
+        });
       }
     };
 
@@ -984,8 +992,10 @@
     if (myGamePageURLRegex.test(window.location.href)) {
       const pageid = parseInt(window.location.href.match(myGamePageURLRegex)[1], 10) || 1;
       const { totalItems, thisPageCompletions } = parseCompletionPage(document);
-      const { totalRecords } = updateCompletions(thisPageCompletions);
+      const { addCounts, totalRecords } = updateCompletions(thisPageCompletions);
 
+      // 有实质更新则重置间隔为 1h，无更新则仅刷时间戳，间隔不变
+      if (addCounts > 0) GM_setValue('personalGameCompletionInterval', 1);
       const pagesUpdateTime = GM_getValue('personalGameCompletionsLastUpdate', []);
       pagesUpdateTime[pageid - 1] = new Date().getTime();
       GM_setValue('personalGameCompletionsLastUpdate', pagesUpdateTime);
@@ -995,8 +1005,11 @@
         loadGameCompletions(myUserId, nextPageID);
       }
     } else if (myHomepageURLRegex.test(window.location.href)) {
-      const { thisPageCompletions } = parseCompletionPage(document);
-      updateCompletions(thisPageCompletions);
+      if (document.querySelector('table.list > tbody > tr')) {
+        const { thisPageCompletions } = parseCompletionPage(document);
+        const { addCounts } = updateCompletions(thisPageCompletions);
+        if (addCounts > 0) GM_setValue('personalGameCompletionInterval', 1);
+      }
 
       const pagesUpdateTime = GM_getValue('personalGameCompletionsLastUpdate', []);
       pagesUpdateTime[0] = new Date().getTime();

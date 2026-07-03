@@ -591,7 +591,7 @@
       && document.querySelectorAll('table.list > tbody > tr').length > 0) {
       const progressPlatinumBG = (p) => `background-image: linear-gradient(90deg,#F4F8FA ${p}%, white ${p}%)`;
       const progressPlatinumBGNight = (p) => `background-image: linear-gradient(90deg, #4b4b4b ${p}%,#3d3d3d ${p}%)`;
-      const progressGoldBG = (p) => `background-image: linear-gradient(90deg, #659f13 ${p}%, white ${p}%)`;
+      const progressGoldBG = (p) => `background-image: linear-gradient(90deg, #F5FAEC ${p}%, white ${p}%)`;
       const progressGoldBGNight = (p) => `background-image: linear-gradient(90deg, #4b4b4b ${p}%, #3d3d3d ${p}%)`;
 
       const applyProgressToRow = (tr) => {

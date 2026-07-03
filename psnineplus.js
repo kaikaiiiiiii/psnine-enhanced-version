@@ -635,7 +635,7 @@
       const result = [];
       $.ajax({
         type: 'GET',
-        url: 'https://psnine.com/battle',
+        url: `${window.location.protocol}//${window.location.hostname}/battle`,
         dataType: 'html',
         async: true,
         success(data, status) {

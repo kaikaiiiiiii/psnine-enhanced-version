@@ -731,7 +731,9 @@
       const monitorBTN = document.createElement('p');
       monitorBTN.className = 'btn btn-large btn-info';
       monitorBTN.title = '当有用户发起该游戏的约战时，顶部菜单会出现红点通知。';
-      monitorBTN.textContent = userBattleMonitors.includes(gameID) ? '移除约战监控' : '添加约战监控';
+      monitorBTN.innerHTML = userBattleMonitors.includes(gameID)
+        ? '<span style="filter:grayscale(1);opacity:1;">🔔</span> 移除约战监控'
+        : '<span style="color:#d4af37;">🔔</span> 添加约战监控';
       // 添加 span 元素并设置样式
       actionArea.appendChild(monitorBTN);
       const style = document.createElement('style');
@@ -752,10 +754,10 @@
       monitorBTN.addEventListener('click', () => {
         if (userBattleMonitors.includes(gameID)) {
           userBattleMonitors = userBattleMonitors.filter((id) => id !== gameID);
-          monitorBTN.textContent = '添加约战监控';
+          monitorBTN.innerHTML = '<span style="color:#d4af37;">🔔</span> 添加约战监控';
         } else {
           userBattleMonitors.push(gameID);
-          monitorBTN.textContent = '移除约战监控';
+          monitorBTN.innerHTML = '<span style="filter:grayscale(1);opacity:1;">🔔</span> 移除约战监控';
         }
         GM_setValue('userBattleMonitors', userBattleMonitors);
         updateTopMenuNotice(userBattleMonitors, cacheBattleInfo.list);

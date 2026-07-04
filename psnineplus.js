@@ -593,7 +593,7 @@
       && document.querySelector('table.list > tbody')) {
       if (settings.platinumGlow) {
         GM_addStyle('.platinum-sweep{position:relative;display:inline-block;}');
-        GM_addStyle('.platinum-sweep::before{content:"";position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(45deg,rgba(0, 102, 255, 0.1) 0%, rgba(233, 242, 255, 0.1) 80%, rgba(255, 255, 255, 0.66) 85%, rgba(233, 242, 255, 0.2) 95%, rgba(0, 102, 255, 0.3) 100%);pointer-events:none;}');
+        GM_addStyle('.platinum-sweep::before{content:"";position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(60deg,rgba(0, 100, 255, 0.2) 0%, rgba(220, 245, 255, 0.2) 70%, rgba(150, 200, 255, 0.5) 75%, rgba(220, 245, 255, 0.2) 95%, rgba(0, 100, 255, 0.2) 100%);pointer-events:none;}');
         GM_addStyle('.platinum-sweep:hover::before{opacity:0;}');
         GM_addStyle('.platinum-sweep:hover img{box-shadow:inset 0 0 0 2px rgba(0,80,220,0.6),0 0 12px 4px rgba(0,80,220,0.7)!important;}');
       }
